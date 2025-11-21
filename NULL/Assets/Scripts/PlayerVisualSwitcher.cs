@@ -2,18 +2,19 @@ using UnityEngine;
 
 public class PlayerVisualSwitcher : MonoBehaviour
 {
-    [Header("Child Models")]
-    public GameObject simpleCube;      // Drag your Cube child here
-    public GameObject characterArt;    // Drag your Character Art child here
+    [Header("Models")]
+    public GameObject simpleCube;
+    public GameObject characterArt;
+
+    [Header("Texture")]
+    public Material texturedMaterial; // Only this is needed
 
     void Start()
     {
-        // Ensure we start with the cube enabled and art disabled
-        // (Unless we already saved that we unlocked it, but keeping it simple for now)
-        UpdateVisuals(false); 
+        // Start as Cube
+        UpdateVisuals(false);
     }
 
-    // Helper function to handle the swapping
     public void UpdateVisuals(bool hasUnlockedArt)
     {
         if (hasUnlockedArt)
@@ -25,6 +26,30 @@ public class PlayerVisualSwitcher : MonoBehaviour
         {
             simpleCube.SetActive(true);
             characterArt.SetActive(false);
+        }
+    }
+
+    public void UpdateTexture(bool hasUnlockedTexture)
+    {
+        if (hasUnlockedTexture)
+        {
+            // Automatically find the Renderer on the characterArt object
+            Renderer rend = characterArt.GetComponent<Renderer>();
+            
+            // If found, apply the texture
+            if (rend != null)
+            {
+                rend.material = texturedMaterial;
+            }
+            else
+            {
+                // Fallback: Try looking in children if the art is a group
+                Renderer childRend = characterArt.GetComponentInChildren<Renderer>();
+                if (childRend != null)
+                {
+                    childRend.material = texturedMaterial;
+                }
+            }
         }
     }
 }

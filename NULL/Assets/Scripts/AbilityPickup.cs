@@ -9,22 +9,25 @@ public class AbilityPickup : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // 1. Unlock in GameManager (Backend)
             GameManager.Instance.UnlockAbility(abilityToUnlock);
+            
+            PlayerVisualSwitcher visuals = other.GetComponent<PlayerVisualSwitcher>();
 
-            // 2. CHECK: Is this the item that unlocks the art?
-            if (abilityToUnlock == AbilityType.CharacterArt)
+            if (visuals != null)
             {
-                // Try to find the visual switcher on the player
-                PlayerVisualSwitcher visuals = other.GetComponent<PlayerVisualSwitcher>();
-                
-                if (visuals != null)
+                // Unlock the Model
+                if (abilityToUnlock == AbilityType.CharacterArt)
                 {
-                    visuals.UpdateVisuals(true); // Turn on the art!
+                    visuals.UpdateVisuals(true); 
+                }
+                
+                // Unlock the Texture
+                if (abilityToUnlock == AbilityType.Texture)
+                {
+                    visuals.UpdateTexture(true);
                 }
             }
 
-            // 3. Visual Effects for the pickup itself
             if (pickupEffect != null)
                 Instantiate(pickupEffect, transform.position, Quaternion.identity);
 
