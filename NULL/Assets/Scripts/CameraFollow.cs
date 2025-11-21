@@ -11,6 +11,7 @@ public class CameraFollow : MonoBehaviour
 
     void LateUpdate()
     {
+        // Only follow if the flag is true and we have a target
         if (!isFollowing || target == null)
             return;
 
@@ -18,7 +19,7 @@ public class CameraFollow : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
     }
 
-    // Start following the player with smooth zoom
+    // This function needs to be called by the PlayerController
     public void StartFollowing(Transform newTarget, float zoomFactor = 0.5f, float duration = 1f)
     {
         target = newTarget;
