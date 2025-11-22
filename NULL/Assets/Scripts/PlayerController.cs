@@ -1,5 +1,6 @@
 using UnityEngine;
-using System.Collections.Generic; // <--- REQUIRED for Queue
+using System.Collections.Generic;
+using UnityEngine.EventSystems; // Required for UI blocking
 
 public class PlayerController : MonoBehaviour
 {
@@ -7,31 +8,39 @@ public class PlayerController : MonoBehaviour
     public CameraFollow gameCamera; 
     public Animator characterAnimator; 
 
+    [Header("Audio Clips")]
+    public AudioClip jumpSound;
+    public AudioClip punchSound;
+    public AudioClip footstepSound;
+
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
     public float turnSpeed = 15f; 
     public float jumpForce = 8f;
+    public float footstepRate = 0.5f; 
 
     [Header("Punch Settings")]
     public float punchRange = 1.5f;             
     public Vector3 hitOffset = new Vector3(0, 1f, 1f); 
-    public LayerMask breakableLayer;            
+    public LayerMask breakableLayer; 
 
     [Header("Respawn Settings")]
-    public float fallThreshold = -10f; // If Y is lower than this, respawn
-    public float historyDuration = 2.0f; // How many seconds to remember
+    public float fallThreshold = -10f; 
+    public float historyDuration = 2.0f; 
 
     private Rigidbody _rb;
     private float _distToGround;
     private bool _jumpRequest; 
     private bool _isCameraActive = false;
 
+    // Footstep timer
+    private float _nextStepTime;
+
     // Fix for animation drift
     private Vector3 _initialModelLocalPos;
     private Quaternion _initialModelLocalRot;
 
-    // --- RESPAWN HISTORY ---
-    // A Queue acts like a line of people. First in, First out.
+    // History Queue
     private Queue<Vector3> _positionHistory = new Queue<Vector3>();
 
     void Start()
@@ -47,59 +56,70 @@ public class PlayerController : MonoBehaviour
             _initialModelLocalPos = characterAnimator.transform.localPosition;
             _initialModelLocalRot = characterAnimator.transform.localRotation;
         }
+
+        // SAFETY CHECK: If we changed scenes, try to find the camera again automatically
+        if (gameCamera == null)
+        {
+            gameCamera = FindFirstObjectByType<CameraFollow>();
+        }
     }
     
     void Update()
     {
         if (GameManager.Instance == null) return;
 
-        // --------------------------------------------
-        // 1. CHECK FOR FALLING (RESPAWN LOGIC)
-        // --------------------------------------------
-        if (transform.position.y < fallThreshold)
-        {
-            Respawn();
-        }
+        // 1. Fall Check
+        if (transform.position.y < fallThreshold) Respawn();
 
-        // --- JUMP LOGIC ---
+        // 2. Jump Logic
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
             if (GameManager.Instance.HasAbility(AbilityType.Jump))
             {
                 _jumpRequest = true;
-                if (characterAnimator != null && characterAnimator.isActiveAndEnabled)
-                    characterAnimator.SetTrigger("Jump");
+                if (characterAnimator != null) characterAnimator.SetTrigger("Jump");
+                if (SoundManager.Instance != null) SoundManager.Instance.PlaySFX(jumpSound);
             }
         }
 
-        // --- PUNCH LOGIC ---
+        // 3. PUNCH LOGIC (DEBUG VERSION)
         if (Input.GetMouseButtonDown(0)) 
         {
-            if (GameManager.Instance.HasAbility(AbilityType.Punch))
-            {
-                if (characterAnimator != null && characterAnimator.isActiveAndEnabled)
-                    characterAnimator.SetTrigger("Punch");
+            Debug.Log("1. Mouse Click Detected!"); // Check Console for this
 
-                CheckForBreakables();
+            // Check UI Blocking
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return;
             }
+
+            // Check Ability
+            if (!GameManager.Instance.HasAbility(AbilityType.Punch))
+            {
+                return;
+            }
+
+            // Check Animator
+            if (characterAnimator == null)
+            {
+                return;
+            }
+            
+            characterAnimator.SetTrigger("Punch");
+            if (SoundManager.Instance != null) SoundManager.Instance.PlaySFX(punchSound);
+            CheckForBreakables();
         }
         
-        // --- CAMERA LOGIC ---
+        // 4. Camera
         if (!_isCameraActive && GameManager.Instance.HasAbility(AbilityType.Camera))
         {
-            if (gameCamera != null)
-            {
-                gameCamera.StartFollowing(transform);
-                _isCameraActive = true; 
-            }
+            if (gameCamera != null) { gameCamera.StartFollowing(transform); _isCameraActive = true; }
         }
     }
-
     void CheckForBreakables()
     {
         Vector3 spherePos = transform.position + (transform.up * hitOffset.y) + (transform.forward * hitOffset.z);
         Collider[] hitColliders = Physics.OverlapSphere(spherePos, punchRange, breakableLayer);
-
         foreach (var hit in hitColliders)
         {
             BreakableBox box = hit.GetComponent<BreakableBox>();
@@ -109,16 +129,16 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // --- MOVEMENT ---
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
-
         Vector3 inputVector = new Vector3(horizontalInput, 0f, verticalInput);
         
+        // Move
         Vector3 movement = inputVector * moveSpeed;
         Vector3 targetPos = _rb.position + movement * Time.fixedDeltaTime;
         _rb.MovePosition(targetPos);
 
+        // Rotate
         if (inputVector.sqrMagnitude > 0.01f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(inputVector);
@@ -126,58 +146,46 @@ public class PlayerController : MonoBehaviour
             _rb.MoveRotation(nextRotation);
         }
 
+        // Anim Speed
         if (characterAnimator != null && characterAnimator.isActiveAndEnabled)
             characterAnimator.SetFloat("Speed", inputVector.magnitude);
         
+        // Jump Physics
         if (_jumpRequest)
         {
             _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             _jumpRequest = false;
         }
 
-        // --------------------------------------------
-        // 2. RECORD POSITION HISTORY
-        // --------------------------------------------
-        // Only record history if we are SAFELY on the ground
-        // This prevents respawning in mid-air over the pit
+        // Footsteps
+        if (inputVector.magnitude > 0.1f && IsGrounded() && Time.time > _nextStepTime)
+        {
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.PlaySFX(footstepSound);
+
+            _nextStepTime = Time.time + footstepRate;
+        }
+
+        // History Recording
         if (IsGrounded())
         {
-            // Add current position to the back of the line
             _positionHistory.Enqueue(transform.position);
-
-            // If the line is too long (older than 2 seconds), remove the oldest point
-            // FixedDeltaTime is usually 0.02s. 
-            // So 50 frames = 1 second. 100 frames = 2 seconds.
-            // Formula: Count > Seconds / DeltaTime
             if (_positionHistory.Count > (historyDuration / Time.fixedDeltaTime))
             {
-                _positionHistory.Dequeue(); // Remove the oldest position
+                _positionHistory.Dequeue(); 
             }
         }
     }
 
-    // --------------------------------------------
-    // 3. THE RESPAWN FUNCTION
-    // --------------------------------------------
     void Respawn()
     {
         if (_positionHistory.Count > 0)
         {
-            // Peek looks at the oldest item in the list (the one from 2 seconds ago)
-            Vector3 safeSpot = _positionHistory.Peek();
-            
-            // Teleport player
-            transform.position = safeSpot;
-            
-            // IMPORTANT: Stop the falling physics!
+            transform.position = _positionHistory.Peek();
             _rb.linearVelocity = Vector3.zero; 
-            _rb.angularVelocity = Vector3.zero;
-            
-            Debug.Log("Respawned at position from 2 seconds ago!");
         }
         else
         {
-            // Fallback if history is empty (start of game)
             transform.position = new Vector3(0, 2, 0);
             _rb.linearVelocity = Vector3.zero;
         }
