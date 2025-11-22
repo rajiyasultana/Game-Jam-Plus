@@ -1,4 +1,5 @@
-using UnityEngine;
+﻿using UnityEngine;
+using static UnityEditor.Searcher.SearcherWindow.Alignment;
 
 public class PlayerController : MonoBehaviour
 {
@@ -62,6 +63,7 @@ public class PlayerController : MonoBehaviour
                 _isCameraActive = true; 
             }
         }
+        
     }
     
     void FixedUpdate()
@@ -70,7 +72,9 @@ public class PlayerController : MonoBehaviour
         float verticalInput = Input.GetAxis("Vertical");
 
         Vector3 inputVector = new Vector3(horizontalInput, 0f, verticalInput);
+
         
+
         // 1. Move Logic
         Vector3 movement = inputVector * moveSpeed;
         Vector3 targetPos = _rb.position + movement * Time.fixedDeltaTime;
