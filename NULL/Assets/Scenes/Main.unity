@@ -5043,6 +5043,8 @@ MonoBehaviour:
   moveSpeed: 10
   turnSpeed: 15
   jumpForce: 60
+  fallThreshold: -10
+  rewindTime: 1
 --- !u!4 &2060188224
 Transform:
   m_ObjectHideFlags: 0
