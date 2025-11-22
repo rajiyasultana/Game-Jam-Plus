@@ -909,6 +909,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1929746173}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &524543524 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: d09631666fe189540bafc78319c9e7d6,
+    type: 3}
+  m_PrefabInstance: {fileID: 1929746173}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &567958648
 GameObject:
   m_ObjectHideFlags: 0
@@ -2238,6 +2244,11 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 640f76f3723df9c4e9614085f41d7b5e, type: 2}
+    - target: {fileID: 5866666021909216657, guid: d09631666fe189540bafc78319c9e7d6,
+        type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 825894089210680117, guid: d09631666fe189540bafc78319c9e7d6, type: 3}
@@ -2417,9 +2428,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameCamera: {fileID: 861559287}
+  characterAnimator: {fileID: 524543524}
   moveSpeed: 10
   turnSpeed: 15
-  jumpForce: 8
+  jumpForce: 50
 --- !u!4 &2060188224
 Transform:
   m_ObjectHideFlags: 0
@@ -2467,7 +2479,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2060188219}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 10
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -2589,7 +2601,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 20.8}
-  m_LocalScale: {x: 100, y: 1, z: 1}
+  m_LocalScale: {x: 100, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
