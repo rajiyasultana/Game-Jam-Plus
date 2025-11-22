@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody>();
         _distToGround = GetComponent<Collider>().bounds.extents.y;
+        MessageManager.Instance.ShowMessage("Welcome to the game!\n\n" +"Problem with camera?\n" +"<b>Pick it up.</b>",5f);
     }
     
     void Update()
@@ -43,6 +44,7 @@ public class PlayerController : MonoBehaviour
 
         // --- 2. CAMERA LOGIC ---
         // If we have the ability, but haven't turned on the camera yet...
+       
         if (!_isCameraActive && GameManager.Instance.HasAbility(AbilityType.Camera))
         {
             if (gameCamera != null)
