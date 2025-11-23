@@ -6,5 +6,7 @@ public enum AbilityType
     Texture,
     Animation,
     UI,
-    Punch
+    Punch,
+    Sound,
+    Gun 
 }
